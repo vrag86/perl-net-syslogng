@@ -9,7 +9,7 @@ use IO::Socket::INET;
 use Sys::Hostname;
 use DateTime;
 
-our $VERSION    = '0.01';
+our $VERSION    = '0.02';
 
 my %SYSLOG_PRIORITIES = (
     'emerg'         => 0,
@@ -122,7 +122,7 @@ B<Net::SyslogNg> - client module for writing to syslog server (rfc5424)
 
 =head1 VERSION
 
-version 0.01
+version 0.02
 
 =head1 SYNOPSYS
 
@@ -172,7 +172,7 @@ Send message to syslog daemon
 
 =head1 DEPENDENCE
 
-L<Sys::hostname>, L<IO::Socket::INET>, L<DateTime>
+L<Sys::Hostname>, L<IO::Socket::INET>, L<DateTime>
 
 =head1 AUTHORS
 
