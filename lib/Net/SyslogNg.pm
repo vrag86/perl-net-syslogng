@@ -1,6 +1,6 @@
 package Net::SyslogNg;
 
-use 5.008001;
+use 5.14.2;
 use strict;
 use warnings;
 use utf8;
@@ -81,7 +81,7 @@ sub send {
     my $msg             = $opt{'-msg'}              // '';
     my $version         = $opt{'-version'}          // 1;
     my $timestamp       = $opt{'-timestamp'}        // DateTime->now()->iso8601 . '.000Z';
-    my $hostname        = $opt{'-hostname'}         // '-';
+    my $hostname        = $opt{'-hostname'}         // inet_ntoa( ( gethostbyname(hostname) )[4] );
     my $message_id      = $opt{'-message_id'}       // '-';
     my $structured_data = $opt{'-structured_data'}  // '-';
     my $application     = $opt{'-application'}      // '-';
@@ -94,11 +94,20 @@ sub send {
     my $priority_raw = ( ( $facility_i << 3 ) | ($priority_i) );
     my $msg_raw = "<$priority_raw>" . join(' ', $version, $timestamp, $hostname, $application, $pid, $message_id, $structured_data, $msg);
 
+    my $sock = IO::Socket::INET->new(
+        'PeerAddr'      => $self->{'syslog_host'},
+        'PeerPort'      => $self->{'syslog_port'},
+        'Proto'         => 'udp',
+    ) or croak "Can't connect to $self->{'syslog_host'}:$self->{'syslog_port'} $@";
+
+    print $sock $msg_raw;
+    close $sock;
+
     if ($self->{'debug'}) {
         print STDOUT 'Syslog raw message: ' . $msg_raw, "\n";
     }
 
-
+    return 1;
 }
 
 
@@ -119,7 +128,69 @@ version 0.01
 
     use Net::SyslogNg;
 
+    # Create Net::SyslogNg object
+    my $syslog = Net::SyslogNg->new(
+        '-syslog_host'      => '127.0.0.1',
+        '-syslog_port'      => 514,
+    );
 
+    # Send message to syslog
+    $syslog->send(
+        '-facility'         => 'daemon',
+        '-priority'         => 'error',
+        '-msg'              => 'Syslog error message',
+    );
 
 =head1 METHODS
+
+=head2 new(%opt)
+
+Create Net::SyslogNg object
+
+    Options:
+        -syslog_host            => Syslog host address
+        -syslog_port            => Syslog port number
+        -facility               => Facility name
+        -priority               => Priority name
+        -debug                  => Enable printing debug messages (default: 0)
+
+=head2 send(%opt)
+
+Send message to syslog daemon
+
+    Options:
+        -facility               => Facility name
+        -priority               => Priority name
+        -pid                    => Process id number (default: current process id)
+        -msg                    => String of message
+        -version                => Version number (default: 1)
+        -timestamp              => Timestamp of message (default: current time in UTC)
+        -hostname               => Hostname of syslog client (default: current hostname)
+        -message_id             => Message id
+        -structured_data        => Structured data field
+        -application            => Application name
+
+=head1 DEPENDENCE
+
+L<Sys::hostname>, L<IO::Socket::INET>, L<DateTime>
+
+=head1 AUTHORS
+
+=over 4
+
+=item *
+
+Pavel Andryushin <vrag867@gmail.com>
+
+=back
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2020 by Pavel Andryushin.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
+
 1;

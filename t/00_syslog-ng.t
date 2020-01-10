@@ -14,7 +14,7 @@ my $syslog = Net::SyslogNg->new(
     -debug      => 1,
 );
 
-$syslog->send();
 
+$syslog->send();
 
 
